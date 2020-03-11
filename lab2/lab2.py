@@ -13,7 +13,7 @@ class Controller:
         self.__instance = instance
         
     def orderStates(self, states):
-        states.sort(key=lambda b: self.__instance.heuristic(b))
+        states.sort(key=lambda b: self.__instance.heuristic(b), reverse=True)
     
     def dfs(self):
         visited = []
