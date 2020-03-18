@@ -10,6 +10,10 @@ from random import randint, shuffle, random
 import copy 
 from numpy import sqrt
 import matplotlib.pyplot as plt
+import sys
+from qtpy.QtWidgets import QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QMainWindow, QApplication, QLineEdit, QLabel
+import threading
+import time
 
 class Cell:
     def __init__(self, x = -1, y = -1):
@@ -65,17 +69,6 @@ class Individual:
         return res
     
     def __duplicates(self):
-#        count = 0
-#        temp = copy.deepcopy(self.__matrix)
-#        for i in range(self.__n):
-#            for j in range(self.__n):
-#                for ii in range(self.__n):
-#                    for jj in range(self.__n):
-#                        if temp[i][j] == temp[ii][jj] and (i != ii or j != jj):
-#                            temp[ii][jj] = Cell()
-#                            count += 1
-#                temp[i][j] = Cell()
-#        return count
         flattenedMatrix = []
         for i in range(self.getSize()):
             for j in range(self.getSize()):
@@ -84,24 +77,6 @@ class Individual:
     
     def __wrongColumns(self):
         count = 0
-#        temp = copy.deepcopy(self.__matrix)
-#        for j in range(self.__n):
-#            for i in range(self.__n - 1):
-#                foundX = False
-#                foundY = False
-#                for k in range(i + 1, self.__n): # TODO fix more than 3 aparitions issue
-#                    if temp[i][j].getValue()[0] == temp[k][j].getValue()[0]:
-#                        count += 1
-#                        foundX = True
-#                        temp[k][j].setX(-1)
-#                    if temp[i][j].getValue()[1] == temp[k][j].getValue()[1]:
-#                        count += 1
-#                        foundY = True
-#                        temp[k][j].setY(-1)
-#                if foundX is True:
-#                    temp[i][j].setX(-1)
-#                if foundY is True:
-#                    temp[i][j].setY(-1)
         for i in range(self.__n):
             columnS = self.__getColumnS(i)
             columnT = self.__getColumnT(i)
@@ -217,8 +192,8 @@ class Population:
         return res
 
 class Problem:
-    def __init__(self, filename):
-        self.__n = self.__readIndividualSizeFromFile(filename)
+    def __init__(self, n):
+        self.__n = n
         
     def __readIndividualSizeFromFile(self, filename):
         file = open(filename, "r")
@@ -249,10 +224,25 @@ class EvolutionaryAlgorithm:
     
     def run(self):
         for i in range(self.__numberOfGenerations):
-            self.__iteration(self.__population.getPopulation(), self.__mutationProbability, self.__crossoverProbability)
+            self.iteration(self.__population.getPopulation(), self.__mutationProbability, self.__crossoverProbability)
         return self.__population.getPopulation()[0]
     
-    def __iteration(self, population, mutationProbability, crossoverProbability):
+    def getPopulationSize(self):
+        return self.__populationSize
+    
+    def getNumberOfGenerations(self):
+        return self.__numberOfGenerations
+    
+    def getMutationProbability(self):
+        return self.__mutationProbability
+    
+    def getCrossoverProbability(self):
+        return self.__crossoverProbability
+    
+    def getPopulation(self):
+        return self.__population.getPopulation()
+    
+    def iteration(self, population, mutationProbability, crossoverProbability):
         i1 = randint(0, len(population) - 1)
         i2 = randint(0, len(population) - 1)
         if i1 != i2:
@@ -327,33 +317,172 @@ class HillClimbAlgorithm:
             differencesSquaresSum += pow(fitnesses[i] - average, 2)
         standardDeviation = sqrt(differencesSquaresSum / self.__statsIterations)
         return (average, standardDeviation, fitnesses)
+      
+class EvolutionaryAlgorithmWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super(EvolutionaryAlgorithmWindow, self).__init__(parent)
+        self.__setupUI()
+
+    def setProblem(self, problem):
+        self.problem = problem
+        self.evolutionaryAlgorithm = EvolutionaryAlgorithm(self.problem, "ev.in") 
         
+    def __setupUI(self):
+        self.findButton = QPushButton('Find', self)
+        self.findButton.resize(self.findButton.sizeHint())
+        self.findButton.move(50, 50)    
+        self.findButton.clicked.connect(self.__findButtonClicked)
+        
+        self.statsButton = QPushButton('Stats', self)
+        self.statsButton.resize(self.statsButton.sizeHint())
+        self.statsButton.move(50, 50)    
+        self.statsButton.clicked.connect(self.__statsButtonClicked)
+        
+        self.hbox = QHBoxLayout()
+        self.hbox.addStretch(1)
+        self.hbox.addWidget(self.findButton)
+        self.hbox.addWidget(self.statsButton)
+        
+        popSizeBox = QHBoxLayout()
+        popSizeLabel = QLabel("Population size:")
+        self.populationSizeInput = QLineEdit()
+        popSizeBox.addWidget(popSizeLabel)
+        popSizeBox.addWidget(self.populationSizeInput)
+        
+        mutationsBox = QHBoxLayout()
+        mutationsLabel = QLabel("Mutations probability:")
+        self.mutationProbabilityInput = QLineEdit()
+        mutationsBox.addWidget(mutationsLabel)
+        mutationsBox.addWidget(self.mutationProbabilityInput)
+        
+        crossoverBox = QHBoxLayout()
+        crossoverLabel = QLabel("Crossover probability:")
+        self.crossoverProbabilityInput = QLineEdit()
+        crossoverBox.addWidget(crossoverLabel)
+        crossoverBox.addWidget(self.crossoverProbabilityInput)
+        
+        gensBox = QHBoxLayout()
+        gensLabel = QLabel("Number of generations:")
+        self.numberOfGenerationsInput = QLineEdit()
+        gensBox.addWidget(gensLabel)
+        gensBox.addWidget(self.numberOfGenerationsInput)
+        
+        self.solutionLabel = QLabel()
+        self.statsLabel = QLabel()
+        self.vbox = QVBoxLayout()
+        self.vbox.addStretch(1)
+        self.vbox.addLayout(popSizeBox)
+        self.vbox.addLayout(mutationsBox)
+        self.vbox.addLayout(crossoverBox)
+        self.vbox.addLayout(gensBox)
+        self.vbox.addWidget(self.solutionLabel)
+        self.vbox.addWidget(self.statsLabel)
+        self.vbox.addLayout(self.hbox)
+        self.setCentralWidget(QWidget())
+        self.centralWidget().setLayout(self.vbox)
     
+    def __findButtonClicked(self):
+        self.evolutionaryAlgorithm.setParams(int(self.populationSizeInput.text()), float(self.mutationProbabilityInput.text()), float(self.crossoverProbabilityInput.text()), int(self.numberOfGenerationsInput.text()))
+        self.evolutionaryAlgorithm.run()        
+        self.solutionLabel.setText("Solution:\n" + str(self.evolutionaryAlgorithm.getPopulation()[0]) + '\nFitness: ' + str(self.evolutionaryAlgorithm.getPopulation()[0].fitness()))
+        
+    def __statsButtonClicked(self):
+        stats = self.evolutionaryAlgorithm.statistics()
+        self.statsLabel.setText("Average: " + str(stats[0]) + "\nStandard deviation:" + str(stats[1]))
+        plt.plot(stats[2])
+        plt.show()
+
+class HillClimbingAlgorithmWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super(HillClimbingAlgorithmWindow, self).__init__(parent)
+        self.__setupUI()
+
+    def setProblem(self, problem):
+        self.problem = problem
+        self.hillClimbingAlgorithm = HillClimbAlgorithm(self.problem, "hill.in") 
+
+    def __setupUI(self):
+        self.findButton = QPushButton('Find', self)
+        self.findButton.resize(self.findButton.sizeHint())
+        self.findButton.move(50, 50)    
+        self.findButton.clicked.connect(self.__findButtonClicked)
+        
+        self.statsButton = QPushButton('Stats', self)
+        self.statsButton.resize(self.statsButton.sizeHint())
+        self.statsButton.move(50, 50)    
+        self.statsButton.clicked.connect(self.__statsButtonClicked)
+        self.hbox = QHBoxLayout()
+        self.hbox.addStretch(1)
+        self.hbox.addWidget(self.findButton)
+        self.hbox.addWidget(self.statsButton)
+        self.solutionLabel = QLabel()
+        self.statsLabel = QLabel()
+        self.vbox = QVBoxLayout()
+        self.vbox.addStretch(1)
+        self.vbox.addWidget(self.solutionLabel)
+        self.vbox.addWidget(self.statsLabel)
+        self.vbox.addLayout(self.hbox)
+        self.setCentralWidget(QWidget())
+        self.centralWidget().setLayout(self.vbox)
+     
+    def __findButtonClicked(self):
+        solution = self.hillClimbingAlgorithm.run()
+        self.solutionLabel.setText("Solution:\n" + str(solution) + '\nFitness:' + str(solution.fitness()))
+        
+    def __statsButtonClicked(self):
+        stats = self.hillClimbingAlgorithm.statistics()
+        self.statsLabel.setText("Average: " + str(stats[0]) + "\nStandard deviation:" + str(stats[1]))
+        plt.plot(stats[2])
+        plt.show()
+
+class MainWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super(MainWindow, self).__init__(parent)
+        self.__setupUI()
+        
+    def __setupUI(self):
+        self.evAlgorithmButton = QPushButton('Evolutionary Algorithm', self)
+        self.evAlgorithmButton.resize(self.evAlgorithmButton.sizeHint())
+        self.evAlgorithmButton.move(50, 50)    
+        self.evAlgorithmButton.clicked.connect(self.__evAlgorithmButtonClicked)
+        self.hillClimbButton = QPushButton('Hill Climbing Algorithm', self)
+        self.hillClimbButton.resize(self.hillClimbButton.sizeHint())
+        self.hillClimbButton.move(50, 50)    
+        self.hillClimbButton.clicked.connect(self.__hillClimbButtonClicked)
+        self.hbox = QHBoxLayout()
+        self.hbox.addStretch(1)
+        self.hbox.addWidget(self.evAlgorithmButton)
+        self.hbox.addWidget(self.hillClimbButton)
+        secondBox = QHBoxLayout()
+        label = QLabel("individual size:")
+        self.problemSizeInput = QLineEdit()
+        secondBox.addWidget(label)
+        secondBox.addWidget(self.problemSizeInput)
+        self.vbox = QVBoxLayout()
+        self.vbox.addStretch(1)
+        self.vbox.addLayout(secondBox)
+        self.vbox.addLayout(self.hbox)
+        self.setCentralWidget(QWidget())
+        self.centralWidget().setLayout(self.vbox)
+
+        self.evAlgorithmButton.clicked.connect(self.__evAlgorithmButtonClicked)
+        self.hillClimbButton.clicked.connect(self.__hillClimbButtonClicked)
+        self.evolutionaryAlgorithmWindow = EvolutionaryAlgorithmWindow(self)
+        self.hillClimbingAlgorithmWindow = HillClimbingAlgorithmWindow(self)
+    
+    def __evAlgorithmButtonClicked(self):
+        self.evolutionaryAlgorithmWindow.setProblem(Problem(int(self.problemSizeInput.text())))
+        self.evolutionaryAlgorithmWindow.show()
+        
+    def __hillClimbButtonClicked(self):
+        self.hillClimbingAlgorithmWindow.setProblem(Problem(int(self.problemSizeInput.text())))
+        self.hillClimbingAlgorithmWindow.show()
+
+
 def main():
-    problem = Problem("problemData.in")
-    print("1 - EA")
-    print("2 - Hill Climbing")
-    option = int(input(">"))
-    if option == 1:
-        evolutionaryAlgorithm = EvolutionaryAlgorithm(problem, "ev.in") 
-#        evolutionaryAlgorithm.setParams()
-#        solution = evolutionaryAlgorithm.run()
-#        print(str(solution))
-#        print(str(solution.fitness()))
-        stats = evolutionaryAlgorithm.statistics()
-        print(stats[0])
-        print(stats[1])
-        plt.plot(stats[2])
-        plt.show()
-    elif option == 2:
-        hillClimbAlgorithm = HillClimbAlgorithm(problem, "hill.in")
-        hillClimbSolution = hillClimbAlgorithm.run()
-        print(str(hillClimbSolution))
-        print(hillClimbSolution.fitness())
-        stats = hillClimbAlgorithm.statistics()
-        print(stats[0])
-        print(stats[1])
-        plt.plot(stats[2])
-        plt.show()
+    app = QApplication(sys.argv)
+    main = MainWindow()
+    main.show()
+    sys.exit(app.exec_())    
     
 main()
