@@ -3,12 +3,51 @@
 from Cell import *
 from random import shuffle, random, randint
 import copy 
+from math import inf
 
 class Individual:
     def __init__(self, n):
         self.__n = n
         self.__matrix = [[Cell() for j in range(n)] for i in range(n)]
+        self.__velocity = [ [0, 0] for i in range(self.__n)]
+        self.__bestFitness = inf
+        self.__bestPosition = copy.deepcopy(self)
     
+    def getBestFitness(self):
+        return self.__bestFitness
+    
+    def getBestPosition(self):
+        return self.__bestPosition
+    
+    def getVelocity(self):
+        return self.__velocity
+    
+    def getRowS(self, i):
+        row = []
+        for j in range(len(self.__matrix[i])):
+            row.append(self.__matrix[i][j].getValue()[0])
+        return row
+    
+    def getRowT(self, i):
+        row = []
+        for j in range(len(self.__matrix[i])):
+            row.append(self.__matrix[i][j].getValue()[1])
+        return row
+    
+    def setRowS(self, i, newRow):
+        for j in range(len(self.__matrix[i])):
+            self.__matrix[i][j].setX(newRow[j])
+        if self.fitness() < self.getBestFitness():
+            self.__bestFitness = self.fitness()
+            self.__bestPosition = copy.deepcopy(self)
+    
+    def setRowT(self, i, newRow):
+        for j in range(len(self.__matrix[i])):
+            self.__matrix[i][j].setY(newRow[j])    
+        if self.fitness() < self.getBestFitness():
+            self.__bestFitness = self.fitness()
+            self.__bestPosition = copy.deepcopy(self)
+            
     def getSize(self):
         return self.__n
     

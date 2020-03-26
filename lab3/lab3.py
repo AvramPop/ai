@@ -8,6 +8,7 @@ Created on Tue Mar 17 13:03:07 2020
 from mainUI import *
 import sys
 from qtpy.QtWidgets import QApplication
+from ParticleSwarm import *
 
 def main():
     app = QApplication(sys.argv)

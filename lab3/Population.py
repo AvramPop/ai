@@ -41,3 +41,12 @@ class Population:
         for i in range(len(list1)):
             res.append(Cell(list1[i], list2[i]))
         return res
+    
+    def neighbourhood(self, neighbourhoodSize):
+        if neighbourhoodSize > len(self.__population):
+            neighbourhoodSize = len(self.__population)
+        neighbours=[]
+        for j in range(neighbourhoodSize):
+            k = randint(0, len(self.__population) - 1)
+            neighbours.append(copy.deepcopy(self.__population[k]))
+        return neighbours
