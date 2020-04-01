@@ -3,7 +3,7 @@
 from Ant import Ant
 from Problem import Problem
 from copy import deepcopy
-from math import inf
+from math import inf, sqrt
 
 class Controller:
     def __init__(self, problem):
@@ -53,3 +53,19 @@ class Controller:
                 best = deepcopy(solution)
                 bestFitness = solution.evaluate()
         return best
+
+    def stats(self, iters):
+        fitnessSum = 0
+        fitnesses = []
+        for i in range(iters):
+            print("running stats")
+            currentSolution = self.runAlgorithm()
+            currentFitness = currentSolution.evaluate()
+            fitnessSum += currentFitness
+            fitnesses.append(currentFitness)
+        average = fitnessSum / iters
+        differencesSquaresSum = 0
+        for i in range(iters):
+            differencesSquaresSum += pow(fitnesses[i] - average, 2)
+        standardDeviation = sqrt(differencesSquaresSum / iters)
+        return (average, standardDeviation, fitnesses)
