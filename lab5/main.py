@@ -11,7 +11,7 @@ def main():
         solution = controller.runAlgorithm()
         print(str(solution) + "\nFitness:" + str(solution.evaluate()))
     elif inp == 2:
-        sts = controller.stats(100)
+        sts = controller.stats(problem.getStatsIters())
         print("Average: " + str(sts[0]) + "\nStandard deviation:" + str(sts[1]))
         plt.plot(sts[2])
         plt.show()

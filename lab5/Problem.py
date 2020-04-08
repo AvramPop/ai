@@ -14,6 +14,7 @@ class Problem:
         self.__beta = float(file.readline().strip())
         self.__rho = float(file.readline().strip())
         self.__q0 = float(file.readline().strip())
+        self.__statsIters = int(file.readline().strip())
         file.close()
 
     def getSize(self):
@@ -24,6 +25,9 @@ class Problem:
     
     def getNumberOfAnts(self):
         return self.__numberOfAnts
+    
+    def getStatsIters(self):
+        return self.__statsIters
     
     def getAlpha(self):
         return self.__alpha
