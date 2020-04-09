@@ -1,10 +1,9 @@
-from data import Data
-from decision_tree import DecisionTree
+from console import Console
 
 def main():
     data = Data("balance-scale.data")
-    decisionTree = DecisionTree(data.getTrainData())
-#    decisionTree.printTree()
-    print(decisionTree.accuracy(data.getTestData()))
+    controller = Controller(data)
+    console = Console(controller)
+    console.run()
     
 main()

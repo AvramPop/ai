@@ -1,28 +1,55 @@
 from data import Entry
 from copy import deepcopy
 from math import log
-
+from pprint import pprint
 class DecisionTree:
-    def __init__(self, trainData):
+    def __init__(self, trainData, strategy):
+        self.__strategy = strategy
         self.__root = self.__buildTree(trainData, [i for i in range(len(trainData[0].getAttributes()))])
         
     def __buildTree(self, data, attributeList):
         if self.__wholeDataInSameClass(data):
-#            print("whole")
-#            print(data[0].getClass())
             return Leaf(data[0].getClass())
         elif len(attributeList) == 0:
-#            print("majority")
-#            print(self.__majorityClass(data))
             return Leaf(self.__majorityClass(data))
         else:
-            separationAttribute = self.__separationAttributeGiniIndex(data, attributeList)
-#            print("separation")
-#            print(separationAttribute)
+            if self.__strategy == "gini":
+                separationAttribute = self.__separationAttributeGiniIndex(data, attributeList)
+            elif self.__strategy == "gain":
+                separationAttribute = self.__separationAttributeInformationGain(data, attributeList)
             node = AttributeNode(separationAttribute)
             for category in data[0].getCategoriesForAttribute(separationAttribute):
                 self.__setChildForCategory(category, data, separationAttribute, node, attributeList)
             return node
+        
+    def __setChildForCategory(self, category, data, separationAttribute, node, attributeList):
+        entriesWithCategory = self.__entriesWithCategory(data, category, separationAttribute)
+        if category == 0:
+            if len(entriesWithCategory) == 0:
+                node.setFalseChild(Leaf(self.__majorityClass(entriesWithCategory)))
+            else:
+                tempAttributeList = deepcopy(attributeList)
+                tempAttributeList.remove(separationAttribute)
+                node.setFalseChild(self.__buildTree(entriesWithCategory, tempAttributeList))
+        else:
+            if len(entriesWithCategory) == 0:
+                node.setTrueChild(Leaf(self.__majorityClass(entriesWithCategory)))
+            else:
+                tempAttributeList = deepcopy(attributeList)
+                tempAttributeList.remove(separationAttribute)
+                node.setTrueChild(self.__buildTree(entriesWithCategory, tempAttributeList))
+    
+    def __entriesWithCategory(self, data, category, separationAttribute):
+        result = []
+        if category == 0:
+            for entry in data:
+                if entry.getAttributes()[separationAttribute] <= entry.getMedianValueForAttribute(separationAttribute):
+                    result.append(entry)
+        else:
+            for entry in data:
+                if entry.getAttributes()[separationAttribute] > entry.getMedianValueForAttribute(separationAttribute):
+                    result.append(entry)
+        return result
     
     def __wholeDataInSameClass(self, data):
         firstElementClass = data[0].getClass()
@@ -39,35 +66,27 @@ class DecisionTree:
             occurences[entry.getClass()] += 1
         return max(occurences, key=lambda k: occurences[k])
     
+    def __computeSystemEntropy(self, data):
+        entropies = {}
+        for entry in data:
+            if entry.getClass() not in entropies:
+                entropies[entry.getClass()] = 0
+            entropies[entry.getClass()] += 1
+        entropy = 0
+        for key, value in entropies.items():
+            r = value / len(data)
+            entropy += r * log(r, 3)
+        return entropy * -1
+    
     def __separationAttributeInformationGain(self, data, attributeList):
         gains = {}
-        entropy = -1 * (2 * 46.08 * log(46.08, 2) + 7.84 * log(7.84, 2))
+        systemEntropy = self.__computeSystemEntropy(data)
         for attribute in attributeList:
             expectedInformation = 0
             for category in data[0].getCategoriesForAttribute(0):
-                expectedInformation += len(self.__entriesWithCategory(data, category, attribute)) / len(data) * self.__entropy(self.__entriesWithCategory(data, category, attribute))
-            gains[attribute] = entropy - expectedInformation
+                expectedInformation += self.__entropy(self.__entriesWithCategory(data, category, attribute))
+            gains[attribute] = systemEntropy - expectedInformation
         return max(gains, key=lambda k: gains[k])
-    
-    def __separationAttributeGiniIndex(self, data, attributeList):
-        indices = {}
-        for attribute in attributeList:
-            gini = 0
-            for category in data[0].getCategoriesForAttribute(0):
-                right = self.__entriesWithClass(self.__entriesWithCategory(data, category, attribute), "R")
-                left = self.__entriesWithClass(self.__entriesWithCategory(data, category, attribute), "L")
-                balanced = self.__entriesWithClass(self.__entriesWithCategory(data, category, attribute), "B") 
-                giniForCategory = 1 - right ** 1 - left ** 2 - balanced ** 2
-                gini += len(self.__entriesWithCategory(data, category, attribute)) / len(data) * giniForCategory
-            indices[attribute] = gini
-        return min(indices, key=lambda k: indices[k])
-    
-    def __entriesWithClass(self, data, entryClass):
-        count = 0
-        for entry in data:
-            if entry.getClass() == entryClass:
-                count += 1
-        return count
     
     def __entropy(self, entries):
         entropies = {}
@@ -78,38 +97,28 @@ class DecisionTree:
         entropy = 0
         for key, value in entropies.items():
             r = value / len(entries)
-            entropy += r * log(r, 2)
+            entropy += r * log(r, 3)
         return entropy * -1
     
-    def __entriesWithCategory(self, data, category, separationAttribute):
-        result = []
-        if category == 0:
-            for entry in data:
-                if entry.getAttributes()[separationAttribute] <= entry.getMedianValueForAttribute(separationAttribute):
-                    result.append(entry)
-        else:
-            for entry in data:
-                if entry.getAttributes()[separationAttribute] > entry.getMedianValueForAttribute(separationAttribute):
-                    result.append(entry)
-        return result
+    def __separationAttributeGiniIndex(self, data, attributeList):
+        indices = {}
+        for attribute in attributeList:
+            gini = 0
+            for category in data[0].getCategoriesForAttribute(0):
+                right = self.__entriesWithClass(self.__entriesWithCategory(data, category, attribute), "R") / len(self.__entriesWithCategory(data, category, attribute))
+                left = self.__entriesWithClass(self.__entriesWithCategory(data, category, attribute), "L") / len(self.__entriesWithCategory(data, category, attribute))
+                balanced = self.__entriesWithClass(self.__entriesWithCategory(data, category, attribute), "B") / len(self.__entriesWithCategory(data, category, attribute)) 
+                giniForCategory = 1 - right ** 2 - left ** 2 - balanced ** 2
+                gini += len(self.__entriesWithCategory(data, category, attribute)) / len(data) * giniForCategory
+            indices[attribute] = gini
+        return min(indices, key=lambda k: indices[k])
     
-    def __setChildForCategory(self, category, data, separationAttribute, node, attributeList):
-        if category == 0:
-            entriesWithCategory = self.__entriesWithCategory(data, category, separationAttribute)
-            if len(entriesWithCategory) == 0:
-                node.setFalseChild(Leaf(self.__majorityClass(entriesWithCategory)))
-            else:
-                tempAttributeList = deepcopy(attributeList)
-                tempAttributeList.remove(separationAttribute)
-                node.setFalseChild(self.__buildTree(entriesWithCategory, tempAttributeList))
-        else:
-            entriesWithCategory = self.__entriesWithCategory(data, category, separationAttribute)
-            if len(entriesWithCategory) == 0:
-                node.setTrueChild(Leaf(self.__majorityClass(entriesWithCategory)))
-            else:
-                tempAttributeList = deepcopy(attributeList)
-                tempAttributeList.remove(separationAttribute)
-                node.setTrueChild(self.__buildTree(entriesWithCategory, tempAttributeList))
+    def __entriesWithClass(self, data, entryClass):
+        count = 0
+        for entry in data:
+            if entry.getClass() == entryClass:
+                count += 1
+        return count
                     
     def predict(self, entry):
        currentNode = self.__root
