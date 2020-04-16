@@ -78,16 +78,6 @@ class DecisionTree:
             entropy += r * log(r, 3)
         return entropy * -1
     
-    def __separationAttributeInformationGain(self, data, attributeList):
-        gains = {}
-        systemEntropy = self.__computeSystemEntropy(data)
-        for attribute in attributeList:
-            expectedInformation = 0
-            for category in data[0].getCategoriesForAttribute(0):
-                expectedInformation += self.__entropy(self.__entriesWithCategory(data, category, attribute))
-            gains[attribute] = systemEntropy - expectedInformation
-        return max(gains, key=lambda k: gains[k])
-    
     def __entropy(self, entries):
         entropies = {}
         for entry in entries:
@@ -100,6 +90,16 @@ class DecisionTree:
             entropy += r * log(r, 3)
         return entropy * -1
     
+    def __separationAttributeInformationGain(self, data, attributeList):
+        gains = {}
+        systemEntropy = self.__computeSystemEntropy(data)
+        for attribute in attributeList:
+            expectedInformation = 0
+            for category in data[0].getCategoriesForAttribute(0):
+                expectedInformation += self.__entropy(self.__entriesWithCategory(data, category, attribute))
+            gains[attribute] = systemEntropy - expectedInformation
+        return max(gains, key=lambda k: gains[k])
+
     def __separationAttributeGiniIndex(self, data, attributeList):
         indices = {}
         for attribute in attributeList:
