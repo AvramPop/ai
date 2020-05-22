@@ -1,0 +1,167 @@
+The algorithm used works in the following way:
+1. Parses the input data given in text format
+2. Fuzzifies data
+3. Does inference on data
+4. Defuzzifies data
+5. Computes the weighted average of computed data (SUGENO)
+6. Outputs the result
+
+The Sugeno model used by this solution  computes the crisp function depending on inputs.
+Using a model of degree 1, f(x, y) = ax + by + c
+
+Validation:
+a)
+input data:
+humidity = 65
+temperature = 17
+FUZZY:
+   dry =  0
+   normal =  0.7
+   wet =  0.3
+
+   very cold =  0
+   cold =  0
+   normal =  0.6
+   warm =  0.4
+   hot =  0
+
+CONJUNCTION:
+
+
+temperature   very cold =  0
+humidity   wet =  0.3
+conjunction =  0
+temperature   cold =  0
+humidity   wet =  0.3
+conjunction =  0
+temperature   normal =  0.6
+humidity   wet =  0.3
+conjunction =  0.3
+temperature   normal =  0.6
+humidity   wet =  0.3
+conjunction =  0.3
+temperature   warm =  0.4
+humidity   wet =  0.3
+conjunction =  0.3
+temperature   warm =  0.4
+humidity   wet =  0.3
+conjunction =  0.3
+temperature   hot =  0
+humidity   wet =  0.3
+conjunction =  0
+temperature   very cold =  0
+humidity   normal =  0.7
+conjunction =  0
+temperature   cold =  0
+humidity   normal =  0.7
+conjunction =  0
+temperature   normal =  0.6
+humidity   normal =  0.7
+conjunction =  0.6
+temperature   normal =  0.6
+humidity   normal =  0.7
+conjunction =  0.6
+temperature   warm =  0.4
+humidity   normal =  0.7
+conjunction =  0.4
+temperature   warm =  0.4
+humidity   normal =  0.7
+conjunction =  0.4
+temperature   hot =  0
+humidity   normal =  0.7
+conjunction =  0
+temperature   very cold =  0
+humidity   dry =  0
+conjunction =  0
+temperature   cold =  0
+humidity   dry =  0
+conjunction =  0
+temperature   normal =  0.6
+humidity   dry =  0
+conjunction =  0
+temperature   warm =  0.4
+humidity   dry =  0
+conjunction =  0
+temperature   hot =  0
+humidity   dry =  0
+conjunction =  0
+
+RESULT:
+0.3  *  10.5  +
+0.3  *  10.5  +
+0.6  *  30.0  +
+0.4  *  20.0  = 44.375
+
+b)
+input data:
+humidity = 40
+tempretaure = 23
+
+FUZZY:
+dry =  0.2
+normal =  0.8
+wet =  0
+
+very cold =  0
+cold =  0
+normal =  0
+warm =  0.4
+hot =  0
+
+CONJUNCTION:
+
+temperature   very cold =  0
+humidity   wet =  0
+conjunction =  0
+temperature   cold =  0
+humidity   wet =  0
+conjunction =  0
+temperature   normal =  0
+humidity   wet =  0
+conjunction =  0
+temperature   warm =  0.4
+humidity   wet =  0
+conjunction =  0
+temperature   hot =  0
+humidity   wet =  0
+conjunction =  0
+temperature   very cold =  0
+humidity   normal =  0.8
+conjunction =  0
+temperature   cold =  0
+humidity   normal =  0.8
+conjunction =  0
+temperature   normal =  0
+humidity   normal =  0.8
+conjunction =  0
+temperature   warm =  0.4
+humidity   normal =  0.8
+conjunction =  0.4
+temperature   warm =  0.4
+humidity   normal =  0.8
+conjunction =  0.4
+temperature   hot =  0
+humidity   normal =  0.8
+conjunction =  0
+temperature   very cold =  0
+humidity   dry =  0.2
+conjunction =  0
+temperature   cold =  0
+humidity   dry =  0.2
+conjunction =  0
+temperature   normal =  0
+humidity   dry =  0.2
+conjunction =  0
+temperature   warm =  0.4
+humidity   dry =  0.2
+conjunction =  0.2
+temperature   warm =  0.4
+humidity   dry =  0.2
+conjunction =  0.2
+temperature   hot =  0
+humidity   dry =  0.2
+conjunction =  0
+
+RESULT:
+0.4  *  20.0  +
+0.2  *  12.0  = 53.33
