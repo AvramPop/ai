@@ -8,8 +8,8 @@ from classifier import Classifier
 HEADER = []
 
 
-class GPAlgorithm:
-    def __init__(self, trainingFilename, inputFilename, outputFilename, nrInd, ITER, sizeofTrain, sizeofTest, mutationProbability, crossoverProbability, epsilon):
+class Controller:
+    def __init__(self, trainingFilename, inputFilename, outputFilename):
         self.n = 0
         self.input = []
         self.output = []
@@ -17,12 +17,15 @@ class GPAlgorithm:
         self.outputTest = []
         self.inputTrain = []
         self.outputTrain = []
-        self.sizeofTrain = sizeofTrain
-        self.sizeofTest = sizeofTest
         self.trainingFilename = trainingFilename
         self.inputFilename = inputFilename
         self.outputFilename = outputFilename
+
+
+    def run(self, nrInd, ITER, sizeofTrain, sizeofTest, mutationProbability, crossoverProbability, epsilon):
         self.nrInd = nrInd
+        self.sizeofTrain = sizeofTrain
+        self.sizeofTest = sizeofTest
         self.iterations = ITER
         self.population = Population(nrInd)
         self.probability_mutate = mutationProbability
@@ -30,18 +33,16 @@ class GPAlgorithm:
         self.epsilon = epsilon
         self.loadData()
 
-
-    def run(self):
-        accuracy = -1
+        accuracy = -1.0
         while accuracy < self.epsilon:
-            # self.population.evaluate(self.inputTrain, self.outputTrain)
+            self.population.evaluate(self.inputTrain, self.outputTrain)
     
             for i in range(self.iterations):
                 print("Iteration: " + str(i))
                 self.iteration(i)
                 self.population.evaluate(self.inputTrain, self.outputTrain)
                 self.population.selection(self.nrInd)
-                best = self.population.best(1)[0]
+            best = self.population.best(1)[0]
             count = 0
             for i in range(len(self.inputTest)):
                 if Classifier.classify(self.population.best(1)[0].predict(self.inputTest[i])) == Classifier.classify(self.outputTest[i]):
@@ -62,18 +63,29 @@ class GPAlgorithm:
         global HEADER
         with open(self.trainingFilename, "r") as f:
             HEADER = f.readline().split(',')[:-1]
-            for line in f.readlines()[:self.sizeofTrain]:
+            inputLines = f.readlines()
+            shuffle(inputLines)
+            for line in inputLines[:self.sizeofTrain]:
                 values = list(map(float, line.split(',')))
                 self.inputTrain.append(values[:-1])
                 self.outputTrain.append(values[-1])
                 self.n += 1
-        shuffle(self.input)
-        shuffle(self.output)
+                
+        # c = list(zip(self.inputTrain, self.outputTrain))
+        # shuffle(c)
+        # self.inputTrain, self.outputTrain = zip(*c)
+        
         with open(self.inputFilename, "r") as f:
-            for line in f.readlines()[:self.sizeofTest]:
+            inputLines = f.readlines()
+            shuffle(inputLines)
+            for line in inputLines[:self.sizeofTest]:
                 values = list(map(float, line.split(',')))
                 self.inputTest.append(values[:-1])
                 self.outputTest.append(values[-1])
+                
+        c = list(zip(self.inputTest, self.outputTest))
+        shuffle(c)
+        self.inputTest, self.outputTest = zip(*c)
 
 
     def iteration(self, i):

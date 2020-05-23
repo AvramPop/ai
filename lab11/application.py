@@ -1,7 +1,8 @@
-from gpalgorithm import GPAlgorithm
+from console import *
 
 def main():
-    algorithmGP = GPAlgorithm("training.in", "input.in", "output.out", 10, 5, 100, 25, 0.5, 0.5, 10)
-    algorithmGP.run()
+    controller = Controller("training.in", "input.in", "output.out")
+    console = Console(controller)
+    console.run()
 
 main()
